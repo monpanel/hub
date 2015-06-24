@@ -1,0 +1,9 @@
+#!/bin/bash
+
+HUB_HOME=/opt/monpanel.com/hub; export HUB_HOME
+alias hub='cd $HUB_HOME'
+alias hublog='cd $HUB_HOME/log'
+alias hubbin='cd $HUB_HOME/bin'
+alias hubdat='cd $HUB_HOME/dat'
+alias hubcfg='cd $HUB_HOME/cfg'
+
