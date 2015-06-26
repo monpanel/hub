@@ -1,6 +1,6 @@
 #!/bin/bash
 
-HUB_HOME=/opt/monpanel.com/hub; export HUB_HOME
+HUB_HOME=/opt/monpanel.com/hub/prod; export HUB_HOME
 alias hub='cd $HUB_HOME'
 alias hublog='cd $HUB_HOME/log'
 alias hubbin='cd $HUB_HOME/bin'
