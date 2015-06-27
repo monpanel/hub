@@ -199,7 +199,10 @@ while 1:
 		LOG(str(e))
 		if conn is not None: 
 			conn.close()
+		time.sleep(60)
 	finally:
 		if conn is not None: 
 			conn.close()
+
+	time.sleep(10)
 
