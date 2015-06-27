@@ -10,8 +10,7 @@ import RPi.GPIO as GPIO
 #import crc16
 from monutils import neodisplay
 
-hub_home=os.environ.get('HUB_HOME', '/opt/monpanel.com/hub')
-#hub_home = '/opt/monpanel.com/hub'
+hub_home=os.environ.get('HUB_HOME', '/opt/monpanel.com/hub/prod')
 
 conn = None
 conn = lite.connect(hub_home + '/dat/local.db') 
@@ -69,7 +68,7 @@ def LOG(str):
 
 #ser.write("testing")
 
-neodisplay('pulldata_start', 'dummy')
+neodisplay(hub_home, 'pulldata_start', 'dummy')
 
 resetradio()
 lt1 = time.time()
@@ -105,7 +104,7 @@ try:
 				conn.commit()
                         	LOG("inserted row")
 
-				neodisplay('pulldata_signal', data_wo_crc)
+				neodisplay(hub_home, 'pulldata_signal', data_wo_crc)
 
 			else:
                         	LOG("crc doesnt match")
