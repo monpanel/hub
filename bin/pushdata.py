@@ -16,11 +16,11 @@ BASE_URL = 'https://pmon.mpcld.com'
 SIGNIN_URL = urlparse.urljoin(BASE_URL, '/api/v1/cmod/signin/')
 BATCH_CREATION_URL = urlparse.urljoin(BASE_URL, '/api/v1/datapoint/batch_creation/')
 
-HUB_HOME=os.environ.get('HUB_HOME', '/opt/monpanel.com/hub/prod')
+hub_home=os.environ.get('HUB_HOME', '/opt/monpanel.com/hub/prod')
 MP_API_HOSTNAME = "pmon.mpcld.com"
 hostname = MP_API_HOSTNAME
 
-flog=open(HUB_HOME + '/log/pushdata.log', 'w+', 0)
+flog=open(hub_home + '/log/pushdata.log', 'w+', 0)
 
 conn = None
 token = None
@@ -152,7 +152,7 @@ neodisplay(hub_home, 'pushdata_start', 'dummy')
 
 try:
 	config = ConfigParser.ConfigParser()
-	config.read(HUB_HOME + "/dat/" + "hub.ini")
+	config.read(hub_home + "/dat/" + "hub.ini")
 	CID = config.get("module", "CID")
 	SECURE_KEY = config.get("module", "SECURE_KEY")
 except Exception as e:
@@ -176,7 +176,7 @@ while 1:
 		else:
 			get_token() 
 
-		conn = lite.connect(HUB_HOME + '/dat/local.db') 
+		conn = lite.connect(hub_home + '/dat/local.db') 
 		all_rows = []
 
 		get_data()
