@@ -1,0 +1,7 @@
+#!/bin/bash
+
+HUB_BASE=/opt/monpanel.com/hub
+HUB_HOME=${HUB_BASE}/prod
+
+
+
