@@ -227,7 +227,7 @@ def clearStrip():
 # Main program logic follows:
 if __name__ == '__main__':
 
-	hub_home=os.environ.get('HUB_HOME', '/opt/monpanel.com/hub')
+	hub_home=os.environ.get('HUB_HOME', '/opt/monpanel.com/hub/prod')
 
 	# Create NeoPixel object with appropriate configuration.
 	strip = Adafruit_NeoPixel(LED_COUNT, LED_PIN, LED_FREQ_HZ, LED_DMA, LED_INVERT, LED_BRIGHTNESS)

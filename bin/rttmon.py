@@ -5,8 +5,7 @@ import subprocess as sp
 import time
 from monutils import neodisplay
 
-hub_home=os.environ.get('HUB_HOME')
-#hub_home = '/opt/monpanel.com/hub'
+hub_home=os.environ.get('HUB_HOME', '/opt/monpanel.com/hub/prod')
 
 conn = None
 conn = lite.connect(hub_home + '/dat/local.db') 
@@ -33,7 +32,7 @@ def ping():
 
 # main
 
-neodisplay('rttmon_start', 'dummy')
+neodisplay(hub_home, 'rttmon_start', 'dummy')
 
 try:
 	while 1:

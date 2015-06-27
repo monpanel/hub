@@ -16,7 +16,7 @@ BASE_URL = 'https://pmon.mpcld.com'
 SIGNIN_URL = urlparse.urljoin(BASE_URL, '/api/v1/cmod/signin/')
 BATCH_CREATION_URL = urlparse.urljoin(BASE_URL, '/api/v1/datapoint/batch_creation/')
 
-HUB_HOME=os.environ.get('HUB_HOME')
+HUB_HOME=os.environ.get('HUB_HOME', '/opt/monpanel.com/hub/prod')
 MP_API_HOSTNAME = "pmon.mpcld.com"
 hostname = MP_API_HOSTNAME
 
@@ -148,7 +148,7 @@ def del_data():
 #
 # main
  
-neodisplay('pushdata_start', 'dummy')
+neodisplay(hub_home, 'pushdata_start', 'dummy')
 
 try:
 	config = ConfigParser.ConfigParser()

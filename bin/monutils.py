@@ -1,8 +1,8 @@
 import os 
 
-def neodisplay(name, data):
+def neodisplay(hub_home, name, data):
         try:
-                f = open('/opt/monpanel.com/hub/' + '/tmp/' + name + '.dat','w')
+                f = open(hub_home + '/tmp/' + name + '.dat','w')
                 f.truncate()
                 f.write(data + '\n')
         except Exception as e:
