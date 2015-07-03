@@ -10,6 +10,7 @@ import threading
 #from colour import Color as Colour
 from threading import Thread
 import os
+import commands as sp
 import mpeasing
 
 from neopixel import *
@@ -285,10 +286,16 @@ if __name__ == '__main__':
 
 		while True:
 			if os.path.exists(hub_home + "/tmp/pulldata_signal.dat"): 
+				status,result = sp.getstatusoutput("cat " + hub_home + "/tmp/pulldata_signal.dat |cut -d ':' -f2 |cut -d '=' -f1")
 				os.remove(hub_home + "/tmp/pulldata_signal.dat")
-				th = SpriteThread(4, "signal2SpriteThread", signal2Sprite, pixels, 100, 50)
-				sprites.append(th)
-				th.start()
+				if result == "at": 
+					th = SpriteThread(4, "signal2SpriteThread", signal2Sprite, pixels, 100, 50)
+					sprites.append(th)
+					th.start()
+				elif result == "sm": 
+					th = SpriteThread(3, "signal1SpriteThread", signal1Sprite, pixels, 50, 50)
+					sprites.append(th)
+					th.start()
 				#
 			if os.path.exists(hub_home + "/tmp/pulldata_start.dat"): 
 				os.remove(hub_home + "/tmp/pulldata_start.dat")
