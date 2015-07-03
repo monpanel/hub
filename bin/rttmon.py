@@ -1,8 +1,9 @@
 
 import os
 import sqlite3 as lite 
-import subprocess as sp
+import commands as sp
 import time
+import ConfigParser
 from monutils import neodisplay
 
 hub_home=os.environ.get('HUB_HOME', '/opt/monpanel.com/hub/prod')
@@ -35,10 +36,21 @@ def ping():
 neodisplay(hub_home, 'rttmon_start', 'dummy')
 
 try:
+        config = ConfigParser.ConfigParser()
+        config.read(hub_home + "/dat/" + "hub.ini")
+        SID = config.get("rttmon", "SID")
+except Exception as e:
+        LOG(str(e))
+        raise e
+
+LOG("SID = " + SID)
+
+
+try:
 	while 1:
 		rtt = ping()
 		if rtt > 0:
-			val = "MDF5-XC45:rtt=" + str(rtt)
+			val = SID + ":rtt=" + str(rtt)
 			cur.execute("INSERT INTO queue (dat_str) VALUES ('%s')" % val)
 			conn.commit()
 			LOG("inserted row")
