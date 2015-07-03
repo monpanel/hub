@@ -3,5 +3,6 @@
 HUB_BASE=/opt/monpanel.com/hub
 HUB_HOME=${HUB_BASE}/prod
 
-
+sudo service supervisor force-reload
+rm -f /tmp/hubupdate_on
 
