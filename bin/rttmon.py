@@ -54,6 +54,7 @@ try:
 			cur.execute("INSERT INTO queue (dat_str) VALUES ('%s')" % val)
 			conn.commit()
 			LOG("inserted row")
+			neodisplay(hub_home, 'rttmon_signal', str(rtt))
 		
 		time.sleep(60)
 				
