@@ -12,6 +12,7 @@ from threading import Thread
 import os
 import commands as sp
 import mpeasing
+from random import randint
 
 from neopixel import *
 
@@ -24,7 +25,20 @@ LED_DMA        = 5       # DMA channel to use for generating signal (try 5)
 LED_BRIGHTNESS = 64      # Set to 0 for darkest and 255 for brightest
 LED_INVERT     = False   # True to invert the signal (when using NPN transistor level shift)
 
+
+
+hub_home=os.environ.get('HUB_HOME', '/opt/monpanel.com/hub/prod')
+flog=open(hub_home + '/log/act2disp.log', 'w+', 0)
+
+
+
+
 ####
+
+def LOG(str):
+	flog.write(str);
+	flog.write("\n");
+	flog.flush();
 
 
 class DisplayThread (threading.Thread):
@@ -37,12 +51,12 @@ class DisplayThread (threading.Thread):
         self.pixels_prev = [Color(0,0,0) for i in range(16)]
 
     def run(self):
-        print "Starting " + self.name
+        LOG("Starting " + self.name)
 	#
 	while not time2quit:
         	self.loop()
 	#
-        print "Exiting " + self.name
+        LOG("Exiting " + self.name)
 	thread.exit()
 
     def loop(self):
@@ -82,7 +96,7 @@ class SpriteThread (threading.Thread):
 	self.spriteLock = threading.Lock()
 
     def run(self):
-        print "Starting " + self.name
+        LOG("Starting " + self.name)
 	#
 	threadMove = threading.Thread(target=self.move, args=(self.delayMove,))
 	threadMove.start()
@@ -93,7 +107,11 @@ class SpriteThread (threading.Thread):
 		
 	#
 	self.sprite[:] = []
-        print "Exiting " + self.name
+        LOG("Removing self from sprites " + self.name)
+	compose_lock.acquire()
+	sprites.remove(self)
+	compose_lock.release()
+        LOG("Exiting " + self.name)
 	thread.exit()
 
     def move(self, delay_ms):
@@ -110,7 +128,7 @@ class SpriteThread (threading.Thread):
 		self.spriteLock.release()
 		#
 		time.sleep(delay_ms/1000.0)
-	print "move done"
+	LOG("move done")
 
     def shine(self, delay_ms):
 	for k in range(0, 251, 50):
@@ -128,7 +146,7 @@ class SpriteThread (threading.Thread):
 		self.changed = True
 		self.spriteLock.release()
 		time.sleep(delay_ms/1000.0)
-	print "shine done"
+	LOG("shine done")
 
 #
 class StillSpriteThread (SpriteThread):
@@ -158,7 +176,7 @@ class StillSpriteThread (SpriteThread):
 		self.changed = True
 		self.spriteLock.release()
 		time.sleep(delay_ms/1000.0)
-	print "shine done"
+	LOG("shine done")
 
 
 #
@@ -171,50 +189,55 @@ class ComposeThread (threading.Thread):
         self.pixels = pixels
 
     def run(self):
-        print "Starting " + self.name
+        LOG("Starting " + self.name)
 	#
 	while not time2quit:
         	self.loop()
 	#
-        print "Exiting " + self.name
+        LOG("Exiting " + self.name)
 	thread.exit()
 
     def loop(self):
-	display_lock.acquire()
-	for i in range(strip.numPixels()):
-		pixels[i] = Color(0, 0, 0)
-	compose_lock.acquire()
-	for k in range(len(sprites)):
-		if sprites[k].isAlive():
-		#	print "Alive: " + sprites[k].name
-			sprites[k].spriteLock.acquire()
-			for i in range(strip.numPixels()):
-				p1_r = ( pixels[i] >> 16 ) & 0xFF;
-				p1_g = ( pixels[i] >>  8 ) & 0xFF;
-				p1_b = ( pixels[i]       ) & 0xFF;
-				p2_r = ( sprites[k].sprite[i] >> 16 ) & 0xFF;
-				p2_g = ( sprites[k].sprite[i] >>  8 ) & 0xFF;
-				p2_b = ( sprites[k].sprite[i]       ) & 0xFF;
-				p2_r = p2_r * sprites[k].brights[i]/256;
-				p2_g = p2_g * sprites[k].brights[i]/256;
-				p2_b = p2_b * sprites[k].brights[i]/256;
-				if (p1_r > 0 and p2_r > 0):
-					p1_r = ( (p1_r + p2_r)/2 ) & 0xFF;
-				else:
-					p1_r = ( p1_r + p2_r ) & 0xFF;
-				if (p1_g > 0 and p2_g > 0):
-					p1_g = ( (p1_g + p2_g)/2 ) & 0xFF;
-				else:
-					p1_g = ( p1_g + p2_g ) & 0xFF;
-				if (p1_b > 0 and p2_b > 0):
-					p1_b = ( (p1_b + p2_b)/2 ) & 0xFF;
-				else:
-					p1_b = ( p1_b + p2_b ) & 0xFF;
-				pixels[i] = Color(p1_r, p1_g, p1_b)
-			sprites[k].changed = False
-			sprites[k].spriteLock.release()
-	compose_lock.release()
-	display_lock.release()
+	try:
+		display_lock.acquire()
+		for i in range(strip.numPixels()):
+			pixels[i] = Color(0, 0, 0)
+		compose_lock.acquire()
+		for k in range(len(sprites)):
+			if sprites[k].isAlive():
+			#	print "Alive: " + sprites[k].name
+				sprites[k].spriteLock.acquire()
+				for i in range(strip.numPixels()):
+					p1_r = ( pixels[i] >> 16 ) & 0xFF;
+					p1_g = ( pixels[i] >>  8 ) & 0xFF;
+					p1_b = ( pixels[i]       ) & 0xFF;
+					p2_r = ( sprites[k].sprite[i] >> 16 ) & 0xFF;
+					p2_g = ( sprites[k].sprite[i] >>  8 ) & 0xFF;
+					p2_b = ( sprites[k].sprite[i]       ) & 0xFF;
+					p2_r = p2_r * sprites[k].brights[i]/256;
+					p2_g = p2_g * sprites[k].brights[i]/256;
+					p2_b = p2_b * sprites[k].brights[i]/256;
+					if (p1_r > 0 and p2_r > 0):
+						p1_r = ( (p1_r + p2_r)/2 ) & 0xFF;
+					else:
+						p1_r = ( p1_r + p2_r ) & 0xFF;
+					if (p1_g > 0 and p2_g > 0):
+						p1_g = ( (p1_g + p2_g)/2 ) & 0xFF;
+					else:
+						p1_g = ( p1_g + p2_g ) & 0xFF;
+					if (p1_b > 0 and p2_b > 0):
+						p1_b = ( (p1_b + p2_b)/2 ) & 0xFF;
+					else:
+						p1_b = ( p1_b + p2_b ) & 0xFF;
+					pixels[i] = Color(p1_r, p1_g, p1_b)
+				sprites[k].changed = False
+				sprites[k].spriteLock.release()
+	except Exception as e:
+		LOG(str(e))
+	finally:
+		compose_lock.release()
+		display_lock.release()
+		#
 	time.sleep(100/1000.0)
 
 
@@ -226,108 +249,147 @@ def clearStrip():
 
 
 # Main program logic follows:
-if __name__ == '__main__':
+#if __name__ == '__main__':
 
-	hub_home=os.environ.get('HUB_HOME', '/opt/monpanel.com/hub/prod')
 
-	# Create NeoPixel object with appropriate configuration.
-	strip = Adafruit_NeoPixel(LED_COUNT, LED_PIN, LED_FREQ_HZ, LED_DMA, LED_INVERT, LED_BRIGHTNESS)
-	# Intialize the library (must be called once before other functions).
-	strip.begin()
+# Create NeoPixel object with appropriate configuration.
+strip = Adafruit_NeoPixel(LED_COUNT, LED_PIN, LED_FREQ_HZ, LED_DMA, LED_INVERT, LED_BRIGHTNESS)
+# Intialize the library (must be called once before other functions).
+strip.begin()
+clearStrip()
+
+
+pixels=[Color(0,0,0) for i in range(16)]
+
+signal1Sprite=[Color(0,0,0) for i in range(16)]
+signal1Sprite[0]=Color(0,0,16)
+signal1Sprite[1]=Color(0,0,32)
+signal1Sprite[2]=Color(0,0,64)
+
+signal2Sprite=[Color(0,0,0) for i in range(16)]
+signal2Sprite[0]=Color(0,16,0)
+signal2Sprite[1]=Color(0,32,0)
+signal2Sprite[2]=Color(0,64,0)
+
+signal3Sprite=[Color(0,0,0) for i in range(16)]
+signal3Sprite[0]=Color(64,32,32)
+signal3Sprite[1]=Color(64,32,32)
+signal3Sprite[2]=Color(64,32,32)
+
+signal4Sprite=[Color(0,0,0) for i in range(16)]
+signal4Sprite[3]=Color(32,32,64)
+signal4Sprite[4]=Color(32,32,64)
+signal4Sprite[5]=Color(32,32,64)
+
+signal5Sprite=[Color(0,0,0) for i in range(16)]
+signal5Sprite[6]=Color(32,64,32)
+signal5Sprite[7]=Color(32,64,32)
+signal5Sprite[8]=Color(32,64,32)
+
+signal6Sprite=[Color(0,0,0) for i in range(16)]
+signal6Sprite[5]=Color(100,44,0)
+
+sprites=[]
+
+display_lock = threading.Lock()
+compose_lock = threading.Lock()
+time2quit = False
+
+try:
+	displayThread = DisplayThread(1, "displayThread", strip, pixels)
+	displayThread.start()
+
+	composeThread = ComposeThread(2, "composeThread", pixels)
+	composeThread.start()
+
+except Exception as e:
+	LOG("Error: unable to start thread")
+	LOG(str(e))
+
+try:
+	time.sleep(100/1000.0)
+
+	while True:
+		if os.path.exists(hub_home + "/tmp/pulldata_signal.dat"): 
+			status,result = sp.getstatusoutput("cat " + hub_home + "/tmp/pulldata_signal.dat |cut -d ':' -f2 |cut -d '=' -f1")
+			os.remove(hub_home + "/tmp/pulldata_signal.dat")
+			th = None
+			if result == "at": 
+				th = SpriteThread(4, "signal2SpriteThread", signal2Sprite, pixels, 100, 50)
+			elif result == "sm": 
+				th = SpriteThread(3, "signal1SpriteThread", signal1Sprite, pixels, 50, 50)
+			if th is not None:
+				compose_lock.acquire()
+				sprites.append(th)
+				compose_lock.release()
+				th.start()
+			#
+		if os.path.exists(hub_home + "/tmp/rttmon_signal.dat"): 
+			status,result = sp.getstatusoutput("cat " + hub_home + "/tmp/rttmon_signal.dat |cut -d ':' -f2 |cut -d '=' -f1")
+			os.remove(hub_home + "/tmp/rttmon_signal.dat")
+			LOG("RTT result=" + str(result))
+			rtt = 1
+			try:
+				rtt = int(result)
+			except Exception as e:
+				rtt = 1
+			LOG("RTT val=" + str(rtt))
+			for i in range(16):
+				signal6Sprite[i]=Color(0,0,0)
+		#	signal6Sprite[randint(0,15)]=Color(100,44,0)
+			nrnd = int(math.log(rtt, 5))
+			LOG("nrnd=" + str(nrnd))
+			if nrnd > 8:
+				nrnd = 8
+			if nrnd < 1:
+				nrnd = 1
+			for i in range(nrnd):
+				signal6Sprite[randint(0,15)]=Color(100,44,0)
+			th = StillSpriteThread(4, "signal6SpriteThread", signal6Sprite, pixels, 5, 0.15)
+			compose_lock.acquire()
+			sprites.append(th)
+			compose_lock.release()
+			th.start()
+			#
+			LOG("len(sprites) = " + str(len(sprites)))
+			#
+		if os.path.exists(hub_home + "/tmp/pulldata_start.dat"): 
+			os.remove(hub_home + "/tmp/pulldata_start.dat")
+			th = StillSpriteThread(5, "signal3SpriteThread", signal3Sprite, pixels, 25, 5)
+			compose_lock.acquire()
+			sprites.append(th)
+			compose_lock.release()
+			th.start()
+			#
+		if os.path.exists(hub_home + "/tmp/pushdata_start.dat"): 
+			os.remove(hub_home + "/tmp/pushdata_start.dat")
+			th = StillSpriteThread(6, "signal4SpriteThread", signal4Sprite, pixels, 25, 5)
+			compose_lock.acquire()
+			sprites.append(th)
+			compose_lock.release()
+			th.start()
+			#
+		if os.path.exists(hub_home + "/tmp/rttmon_start.dat"): 
+			os.remove(hub_home + "/tmp/rttmon_start.dat")
+			th = StillSpriteThread(7, "signal5SpriteThread", signal5Sprite, pixels, 25, 5)
+			compose_lock.acquire()
+			sprites.append(th)
+			compose_lock.release()
+			th.start()
+			#
+		time.sleep(500/1000.0)
+
+except KeyboardInterrupt:
+	LOG("Ok ok, quitting")
+finally:
+	time2quit = True;
+	displayThread.join()
+	composeThread.join()
+	for i in range(len(sprites)):
+		if sprites[i].isAlive():
+			sprites[i].join()
 	clearStrip()
-
-
-	pixels=[Color(0,0,0) for i in range(16)]
-
-	signal1Sprite=[Color(0,0,0) for i in range(16)]
-	signal1Sprite[0]=Color(0,0,16)
-	signal1Sprite[1]=Color(0,0,32)
-	signal1Sprite[2]=Color(0,0,64)
-
-	signal2Sprite=[Color(0,0,0) for i in range(16)]
-	signal2Sprite[0]=Color(0,16,0)
-	signal2Sprite[1]=Color(0,32,0)
-	signal2Sprite[2]=Color(0,64,0)
-
-	signal3Sprite=[Color(0,0,0) for i in range(16)]
-	signal3Sprite[0]=Color(64,32,32)
-	signal3Sprite[1]=Color(64,32,32)
-	signal3Sprite[2]=Color(64,32,32)
-
-	signal4Sprite=[Color(0,0,0) for i in range(16)]
-	signal4Sprite[3]=Color(32,32,64)
-	signal4Sprite[4]=Color(32,32,64)
-	signal4Sprite[5]=Color(32,32,64)
-
-	signal5Sprite=[Color(0,0,0) for i in range(16)]
-	signal5Sprite[6]=Color(32,64,32)
-	signal5Sprite[7]=Color(32,64,32)
-	signal5Sprite[8]=Color(32,64,32)
-
-	sprites=[]
-
-	display_lock = threading.Lock()
-	compose_lock = threading.Lock()
-	time2quit = False
-
-	try:
-		displayThread = DisplayThread(1, "displayThread", strip, pixels)
-		displayThread.start()
-
-		composeThread = ComposeThread(2, "composeThread", pixels)
-		composeThread.start()
-
-	except Exception as e:
-		print "Error: unable to start thread"
-		print str(e)
-
-	try:
-		time.sleep(100/1000.0)
-
-		while True:
-			if os.path.exists(hub_home + "/tmp/pulldata_signal.dat"): 
-				status,result = sp.getstatusoutput("cat " + hub_home + "/tmp/pulldata_signal.dat |cut -d ':' -f2 |cut -d '=' -f1")
-				os.remove(hub_home + "/tmp/pulldata_signal.dat")
-				if result == "at": 
-					th = SpriteThread(4, "signal2SpriteThread", signal2Sprite, pixels, 100, 50)
-					sprites.append(th)
-					th.start()
-				elif result == "sm": 
-					th = SpriteThread(3, "signal1SpriteThread", signal1Sprite, pixels, 50, 50)
-					sprites.append(th)
-					th.start()
-				#
-			if os.path.exists(hub_home + "/tmp/pulldata_start.dat"): 
-				os.remove(hub_home + "/tmp/pulldata_start.dat")
-				th = StillSpriteThread(5, "signal3SpriteThread", signal3Sprite, pixels, 25, 5)
-				sprites.append(th)
-				th.start()
-				#
-			if os.path.exists(hub_home + "/tmp/pushdata_start.dat"): 
-				os.remove(hub_home + "/tmp/pushdata_start.dat")
-				th = StillSpriteThread(6, "signal4SpriteThread", signal4Sprite, pixels, 25, 5)
-				sprites.append(th)
-				th.start()
-				#
-			if os.path.exists(hub_home + "/tmp/rttmon_start.dat"): 
-				os.remove(hub_home + "/tmp/rttmon_start.dat")
-				th = StillSpriteThread(7, "signal5SpriteThread", signal5Sprite, pixels, 25, 5)
-				sprites.append(th)
-				th.start()
-				#
-			time.sleep(500/1000.0)
-
-	except KeyboardInterrupt:
-		print("Ok ok, quitting")
-	finally:
-		time2quit = True;
-		displayThread.join()
-		composeThread.join()
-		for i in range(len(sprites)):
-			if sprites[i].isAlive():
-				sprites[i].join()
-		clearStrip()
-		time.sleep(100/1000.0)
+	time.sleep(100/1000.0)
 
 
 

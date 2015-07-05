@@ -118,8 +118,10 @@ def put_data():
 		LOG(data)
 
 		res = urllib2.urlopen(req, data = data, timeout = 20)
-		LOG('\r\n<<<')
-		LOG(str(res.getcode()))
+		if res.getcode() != 202:
+			LOG('\r\n<<<')
+			LOG(str(res.getcode()))
+			raise Exception('urlopen', str(res.getcode()))
 
 	except Exception as e:
 		LOG(str(e))
